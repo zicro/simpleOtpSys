@@ -4,6 +4,7 @@ namespace App\Http\Requests\Auth;
 
 use App\Models\User;
 use App\Notifications\TwoFactorCode;
+use Facade\FlareClient\Http\Client;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -62,6 +63,18 @@ class LoginRequest extends FormRequest
         //send the code to the user email
         $user->notify(new TwoFactorCode());
         
+        // send the code to the Phone user
+        $message = "the verification code is : ".$user->code;
+        $account_id = getenv('TWILIO_SID');
+        $auth_token = getenv('TWILIO_TOKEN');
+        $twilio_number = getenv('TWILIO_FROM');
+        $client = new Client($account_id,$auth_token);
+
+        $client->messages->create('+212000000', [
+            'from' => $twilio_number,
+            'body' => $message
+        ]);
+
 
         RateLimiter::clear($this->throttleKey());
     }
